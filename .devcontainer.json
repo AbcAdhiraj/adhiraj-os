@@ -1,0 +1,27 @@
+{
+  "name": "adhiraj-os",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "forwardPorts": [
+    8080
+  ],
+  "portsAttributes": {
+    "8080": {
+      "label": "adhiraj-os",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "postAttachCommand": "nohup python3 -m http.server 8080 > /tmp/server.log 2>&1 &",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ritwickdey.LiveServer"
+      ]
+    },
+    "codespaces": {
+      "openFiles": [
+        "data.js",
+        "README.md"
+      ]
+    }
+  }
+}
