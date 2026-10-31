@@ -306,7 +306,8 @@ window.SAFE = (function () {
           { label: "Close All Windows", disabled: !Object.keys(OS.wins).length, action: () => Object.keys(OS.wins).forEach(OS.close) },
         ],
         Help: [
-          { label: "How does this work?", action: () => OS.open("notes", "about-me") },
+          { label: "Who made this?", action: () => OS.open("notes", "about-me") },
+          { label: "Read my red flags", action: () => OS.open("notes", "red-flags") },
           { label: "Contact Adhiraj", action: () => OS.open("mail", "compose") },
           { label: "View Source on GitHub", action: () => window.open(SITE_REPO, "_blank") },
         ],
@@ -395,7 +396,7 @@ window.SAFE = (function () {
       { label: `Wi-Fi: ${S.wifi ? "On" : "Off"}`, disabled: true },
       { label: S.wifi ? "Turn Wi-Fi Off" : "Turn Wi-Fi On", action: () => set("wifi", !S.wifi) },
       "-",
-      ...(S.wifi ? [{ label: "✓ Bengaluru_5G", disabled: true }, { label: "chai_point_guest", action: () => OS.toast("Wi-Fi", "nice try. the chai point wifi needs an otp", "settings") }, "-"] : []),
+      ...(S.wifi ? [{ label: "✓ Bengaluru_5G", disabled: true }, { label: "chai_point_guest", action: () => OS.toast("Wi-Fi", "nice try. the chai point wifi needs an otp you'll never get", "settings") }, "-"] : []),
       { label: "Wi-Fi Settings…", action: () => OS.open("settings", "wifi") },
     ]);
     $("#mb-cc").onclick = () => showMenu($("#mb-cc"), controlCenter);
@@ -434,7 +435,7 @@ window.SAFE = (function () {
   function shutdown() {
     Object.keys(OS.wins).forEach(OS.close);
     OS.music && OS.music.stop();
-    const s = $("#sleep"); s.hidden = false; s.innerHTML = `<div style="position:absolute;inset:0;display:grid;place-items:center;color:#777;font-size:14px">it's off. click anywhere to turn it back on</div>`;
+    const s = $("#sleep"); s.hidden = false; s.innerHTML = `<div style="position:absolute;inset:0;display:grid;place-items:center;color:#777;font-size:14px">it's off. go touch grass, or click anywhere to turn it back on</div>`;
     requestAnimationFrame(() => s.classList.add("on"));
     setTimeout(() => s.addEventListener("click", () => { SAFE.sdel("booted"); location.hash = ""; location.reload(); }), 500);
   }
@@ -515,7 +516,7 @@ window.SAFE = (function () {
     else OS.open("notes", "about-me");
     if (!SAFE.sget("welcomed")) {
       SAFE.sset("welcomed", 1);
-      setTimeout(() => OS.toast("welcome to adhiraj's mac", isMobile() ? "tap the dock to open apps" : "click around. everything works. ⌘K to search", "finder"), 700);
+      setTimeout(() => OS.toast("welcome to adhiraj's mac", isMobile() ? "tap the dock. everything works, even the trash" : "everything here actually works. yes, even the trash. ⌘K to search", "finder"), 700);
     }
   };
 })();

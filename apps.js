@@ -14,6 +14,8 @@
       if (l.startsWith("- ")) { if (!list) { out += "<ul>"; list = true; } out += `<li>${inline(l.slice(2))}</li>`; return; }
       if (list) { out += "</ul>"; list = false; }
       if (!l) return;
+      const im = l.match(/^!\[(.*?)\]\((.+?)\)$/);
+      if (im) { out += `<figure class="note-photo"><img src="${esc(im[2])}" alt="${esc(im[1])}" loading="lazy"><figcaption>${esc(im[1])}</figcaption></figure>`; return; }
       if (l.startsWith("## ")) out += `<h2>${inline(l.slice(3))}</h2>`;
       else if (l.startsWith("# ")) out += `<h1>${inline(l.slice(2))}</h1>`;
       else out += `<p>${inline(l)}</p>`;
@@ -41,7 +43,7 @@
      NOTES
      ===================================================================== */
   OS.apps.notes = {
-    title: "Notes", w: 1060, h: 640, about: "everything about adhiraj, in notes form",
+    title: "Notes", w: 1060, h: 640, about: "my whole life, in lowercase",
     mount(w, slug) {
       w.state = { slug: slug || "about-me", q: "" };
       w.body.innerHTML = `
@@ -65,7 +67,7 @@
       $(".share", w.body).onclick = () => {
         const url = location.href.split("#")[0] + "#notes/" + w.state.slug;
         navigator.clipboard?.writeText(url);
-        OS.toast("Link copied", "share this note with anyone", "notes");
+        OS.toast("Link copied", "go spread the lore", "notes");
       };
       this.list(w); this.show(w);
       if (slug) w.body.classList.add("m-detail");
@@ -98,19 +100,28 @@
   const fsRoot = () => ({
     recents: { name: "Recents", glyph: "clock", items: () => [...NOTES.slice(0, 3).map(noteFile), ...PROJECTS.slice(0, 3).map(projFolder)] },
     applications: { name: "Applications", glyph: "apps", items: () => Object.entries(OS.apps).map(([id, a]) => ({ name: a.title, kind: "Application", icon: ICONS[a.icon || id], mod: "Today", size: "--", open: () => OS.open(id) })) },
-    desktop: { name: "Desktop", glyph: "desktop", items: () => [] , empty: "a clean desktop. rare footage." },
+    desktop: { name: "Desktop", glyph: "desktop", items: () => [] , empty: "a clean desktop. rare footage. (everything is in downloads, obviously)" },
     documents: { name: "Documents", glyph: "docs", items: () => NOTES.map(noteFile) },
-    downloads: { name: "Downloads", glyph: "download", items: () => [
-      { name: "offer-letters", kind: "Folder", icon: ICONS.folder, mod: "after 1 month of cold dms", size: "3 items", open: () => OS.open("notes", "cold-dm-story") },
-      { name: "stirling-pdf", kind: "Application", icon: ICONS.doc, mod: "replaced ilovepdf", size: "--", open: () => OS.open("notes", "things-i-believe") },
-    ] },
+    downloads: { name: "Downloads", glyph: "download", items: () => (window.DOWNLOADS || []).map(jokeFile) },
     projects: { name: "Projects", glyph: "folder", items: () => PROJECTS.map(projFolder) },
-    trash: { name: "Trash", glyph: "trash", items: () => [
-      { name: "ilovepdf-bookmark.webloc", kind: "Web Location", icon: ICONS.link, mod: "replaced by ffmpeg + stirling pdf", size: "1 KB", open: () => OS.toast("Trash", "it's in the trash for a reason", "trash") },
-      { name: "ai-written-linkedin-posts.txt", kind: "Plain Text", icon: ICONS.doc, mod: "never posted", size: "0 KB", open: () => OS.toast("Trash", "write like a human. always", "trash") },
-      { name: "12-demos-plan.key", kind: "Keynote", icon: ICONS.doc, mod: "swapped for 3,000 attempts", size: "2 MB", open: () => OS.open("notes", "things-i-believe") },
-    ] },
+    trash: { name: "Trash", glyph: "trash", items: () => (window.TRASH || []).map(jokeFile), empty: "trash is empty. character development." },
   });
+  const jokeFile = (f) => ({
+    name: f.name, kind: f.kind || "Document", size: f.size || "--", mod: f.mod || "--",
+    icon: f.kind === "Folder" ? ICONS.folder : /web/i.test(f.kind || "") ? ICONS.link : ICONS.doc,
+    open: (w) => (f.note ? OS.open("notes", f.note) : filePreview(w, f)),
+  });
+  function filePreview(w, f) {
+    const ql = h(`<div class="ql-back"><div class="ql">
+      <div class="ql-hd"><div class="badge" style="background:#8e8e93">${ICONS.doc}</div><div><h3 style="word-break:break-all">${esc(f.name)}</h3><small>${esc(f.kind || "")} · ${esc(f.size || "")} · ${esc(f.mod || "")}</small></div></div>
+      <div class="ql-bd" style="white-space:pre-wrap">${esc(f.preview || "this file is too powerful to preview.")}</div>
+      <div class="ql-ft"><button class="btn primary" data-a="x">Close</button></div>
+    </div></div>`);
+    (w ? w.body : document.body).appendChild(ql);
+    const close = () => ql.remove();
+    ql.onclick = (e) => { if (e.target === ql) close(); };
+    $('[data-a="x"]', ql).onclick = close;
+  }
   const noteFile = (n) => ({ name: n.slug + ".txt", kind: "Plain Text", icon: ICONS.doc, mod: fmtDate(n.date), size: (n.body.length / 1000).toFixed(1) + " KB", open: () => OS.open("notes", n.slug) });
   const projFolder = (p) => ({ name: p.name, kind: "Folder", icon: ICONS.folder, mod: p.modified, size: "--", open: (w) => quickLook(w, p), id: p.id });
 
@@ -118,7 +129,7 @@
     const ql = h(`<div class="ql-back"><div class="ql">
       <div class="ql-hd"><div class="badge" style="background:${p.color}">${esc(p.name[0].toUpperCase())}</div><div><h3>${esc(p.name)}</h3><small>${esc(p.role)} · ${esc(p.dates)}</small></div></div>
       <div class="ql-bd"><p style="margin:0">${esc(p.summary)}</p><ul>${p.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul></div>
-      <div class="ql-ft">${p.link ? `<a class="btn" href="${esc(p.link)}" target="_blank" rel="noopener">Visit ${GLYPH.ext}</a>` : ""}<button class="btn" data-a="note">Read the full story</button><button class="btn primary" data-a="x">Done</button></div>
+      <div class="ql-ft">${p.link ? `<a class="btn" href="${esc(p.link)}" target="_blank" rel="noopener">Visit ${GLYPH.ext}</a>` : ""}<button class="btn" data-a="note">Read the lore</button><button class="btn primary" data-a="x">Done</button></div>
     </div></div>`);
     w.body.appendChild(ql);
     const close = () => ql.remove();
@@ -129,7 +140,7 @@
   }
 
   OS.apps.finder = {
-    title: "Finder", w: 920, h: 540, about: "browse adhiraj's projects and files",
+    title: "Finder", w: 920, h: 540, about: "where the projects (and bad decisions) live",
     mount(w, arg) {
       w.state = { loc: "projects", hist: [], fwd: [], view: "list", sel: -1, q: "" };
       const root = fsRoot();
@@ -241,7 +252,7 @@
       if (i === undefined) i = cur < 0 ? 0 : cur;
       const s = SONGS[i]; if (!s) return;
       if (i !== cur) { cur = i; audio.src = s.preview; }
-      audio.play().catch(() => OS.toast("Music", "couldn't play this preview right now", "music"));
+      audio.play().catch(() => OS.toast("Music", "apple said no to this one. try another song", "music"));
       if ("mediaSession" in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: s.title, artist: s.artist, album: s.album, artwork: [{ src: s.art, sizes: "600x600" }] });
       OS.emit("music"); OS.updateDock();
     },
@@ -259,7 +270,7 @@
   }
 
   OS.apps.music = {
-    title: "Music", w: 1080, h: 680, minW: 600, about: "adhiraj's favorite music, with 30s previews",
+    title: "Music", w: 1080, h: 680, minW: 600, about: "the soundtrack to my questionable decisions",
     mount(w, arg) {
       w.state = { tab: arg || "home" };
       w.body.innerHTML = `
@@ -374,7 +385,7 @@
   });
 
   OS.apps.tv = {
-    title: "TV", w: 1100, h: 700, minW: 600, about: "shows adhiraj keeps coming back to",
+    title: "TV", w: 1100, h: 700, minW: 600, about: "shows i rewatched instead of sleeping",
     mount(w, arg) {
       w.state = { sel: +arg || 0, tab: "home" };
       w.body.innerHTML = `
@@ -429,7 +440,7 @@
      TERMINAL
      ===================================================================== */
   OS.apps.terminal = {
-    title: "Terminal", w: 720, h: 460, about: "for recruiters who prefer the command line",
+    title: "Terminal", w: 720, h: 460, about: "for recruiters who think guis are mid",
     mount(w) {
       w.body.style.flexDirection = "column";
       w.body.innerHTML = `<div class="term-head">${esc(P.handle)} — zsh — 80×24</div><div class="term"><div class="out"></div><div class="in"><span class="p">${esc(P.handle)}@macbook</span>&nbsp;<span class="d">~</span>&nbsp;%<input spellcheck="false" autocomplete="off" aria-label="terminal input"></div></div>`;
@@ -438,7 +449,7 @@
       const print = (html) => { out.insertAdjacentHTML("beforeend", `<div class="ln">${html}</div>`); term.scrollTop = term.scrollHeight; };
       term.onclick = () => { if (!getSelection().toString()) input.focus(); };
       const cmds = {
-        help: () => `available commands:
+        help: () => `commands (no, rm -rf / is not one of them):
   <span class="y">whoami</span>       who is this guy
   <span class="y">about</span>        the short version
   <span class="y">experience</span>   where i've worked
@@ -449,11 +460,16 @@
   <span class="y">music</span>        play something
   <span class="y">open</span> &lt;app&gt;   notes, music, tv, finder, mail, safari, settings
   <span class="y">theme</span>        toggle dark mode
-  <span class="y">date</span> · <span class="y">echo</span> · <span class="y">ls</span> · <span class="y">cat</span> · <span class="y">clear</span> · <span class="y">sudo</span>`,
-        whoami: () => `${esc(P.name)}\n${esc(P.headline)}\n${esc(P.location)}`,
-        about: () => `i'm adhiraj. i do growth at oneassure and i'm building kissa on the side.
-started my first business (grangers) at 15. got 3 offers off a month of cold dms.
-<span class="m">full story: open notes</span>`,
+  <span class="y">trash</span>        my bad decisions, archived
+  <span class="y">hire</span>         you know what this does
+  <span class="y">date</span> · <span class="y">echo</span> · <span class="y">ls</span> · <span class="y">cat</span> · <span class="y">rm</span> · <span class="y">clear</span> · <span class="y">sudo</span>`,
+        whoami: () => `${esc(P.name)}\n${esc(P.headline)}\n${esc(P.location)}\n<span class="m">(a 19 year old with a mac-themed website and a windows laptop)</span>`,
+        about: () => `i'm adhiraj. growth at oneassure, building kissa on the side.
+started my first business at 15 (walking dogs, no shame). got 3 offers off a month of cold dms.
+<span class="m">full lore: open notes</span>`,
+        trash: () => (window.TRASH || []).map((f) => `<span class="r">${esc(f.name)}</span>  <span class="m">${esc(f.mod || "")}</span>`).join("\n"),
+        hire: () => cmds.sudo(["hire"]),
+        rm: (a) => { const t = a.filter((x) => !x.startsWith("-")).join(" "); if (/imposter/i.test(t)) return `<span class="r">rm: imposter-syndrome: resource busy. it's always busy.</span>`; if (t === "/" || /-rf/.test(a.join(" "))) return `<span class="r">absolutely not. this mac is my whole portfolio.</span>`; return `<span class="m">moved ${esc(t || "nothing")} to trash. (not really. i'm a website.)</span>`; },
         experience: () => PROJECTS.map((p) => `<span class="y">${esc(p.name.padEnd(12))}</span> ${esc(p.role)} <span class="m">(${esc(p.dates)})</span>`).join("\n"),
         projects: () => PROJECTS.map((p) => `<span class="d">${esc(p.name)}/</span>`).join("  ") + `\n<span class="m">try: cat kissa</span>`,
         ls: (a) => a && a[0] === "projects" ? cmds.projects() : `<span class="d">projects/</span>  <span class="d">documents/</span>  <span class="d">downloads/</span>  ${NOTES.map((n) => esc(n.slug) + ".txt").join("  ")}`,
@@ -474,20 +490,20 @@ started my first business (grangers) at 15. got 3 offers off a month of cold dms
           if (OS.apps[k]) { OS.open(k); return `opening ${esc(OS.apps[k].title)}…`; }
           return `<span class="r">open: can't find app "${esc(a[0] || "")}"</span>`;
         },
-        theme: () => { OS.set("theme", document.body.classList.contains("dark") ? "light" : "dark"); return "done."; },
+        theme: () => { OS.set("theme", document.body.classList.contains("dark") ? "light" : "dark"); return "done. your eyes can thank me later."; },
         date: () => new Date().toString(),
         echo: (a) => esc(a.join(" ")),
         pwd: () => `/Users/${esc(P.handle)}`,
-        sudo: (a) => a.join(" ").includes("hire") ? `<span class="p">permission granted.</span> opening mail…` + (setTimeout(() => OS.open("mail", "compose"), 600), "") : `<span class="r">${esc(P.handle)} is not in the sudoers file. try: sudo hire adhiraj</span>`,
+        sudo: (a) => a.join(" ").includes("hire") ? `<span class="p">permission granted. excellent decision.</span> opening mail…` + (setTimeout(() => OS.open("mail", "compose"), 700), "") : `<span class="r">nice try. you're not in the sudoers file. try: sudo hire adhiraj</span>`,
         clear: () => { out.innerHTML = ""; return null; },
-        exit: () => { setTimeout(() => OS.close("terminal"), 150); return "logout"; },
+        exit: () => { setTimeout(() => OS.close("terminal"), 400); return "logout. (you'll be back)"; },
       };
       const run = (line) => {
         print(`<span class="p">${esc(P.handle)}@macbook</span> <span class="d">~</span> % ${esc(line)}`);
         const [c, ...a] = line.trim().split(/\s+/);
         if (!c) return;
         const fn = cmds[c.toLowerCase()];
-        const r = fn ? fn(a) : `<span class="r">zsh: command not found: ${esc(c)}</span>  <span class="m">(try help)</span>`;
+        const r = fn ? fn(a) : `<span class="r">zsh: command not found: ${esc(c)}</span>  <span class="m">(skill issue. try help)</span>`;
         if (r) print(r);
       };
       input.onkeydown = (e) => {
@@ -498,7 +514,7 @@ started my first business (grangers) at 15. got 3 offers off a month of cold dms
         else if (e.key === "l" && e.ctrlKey) { e.preventDefault(); out.innerHTML = ""; }
       };
       print(`<span class="m">Last login: ${new Date().toDateString()} on ttys000</span>`);
-      print(`welcome to ${esc(P.first.toLowerCase())}'s mac. type <span class="y">help</span> to see what i can do.`);
+      print(`welcome to ${esc(P.first.toLowerCase())}'s mac. type <span class="y">help</span>. or don't, i'm a terminal, not a cop.`);
       setTimeout(() => input.focus(), 50);
       OS.setHash("terminal");
     },
@@ -508,11 +524,12 @@ started my first business (grangers) at 15. got 3 offers off a month of cold dms
      MAIL
      ===================================================================== */
   const MAILS = () => [
-    { id: "hi", from: P.name, sub: "welcome to my mac", date: "Today", body: `hey,\n\nthanks for stopping by. this whole site is a mac. every app in the dock works.\n\n- notes: everything about me\n- finder > projects: where i've worked\n- music: what i'm listening to (hit play)\n- tv: what i'm watching\n- terminal: type help\n\nif you want to talk growth, gtm or a role, hit compose. it opens your email app with my address filled in.\n\n- ${P.first.toLowerCase()}` },
-    { id: "work", from: P.name, sub: "re: are you open to work?", date: "Yesterday", body: `yes.\n\n${P.status}.\n\nwhat i've done so far:\n- oneassure: founder-led content on x, templates for 60+ affiliate creators\n- kissa: outbound ai agent, 200+ icps, 15% reply rate\n- ekume: 800+ students, partners like geeksforgeeks and mlh\n- octupie: built x from zero, product reels, reddit\n\nresume and links on linkedin: ${P.links.linkedin}\n\n- ${P.first.toLowerCase()}` },
+    { id: "hi", from: P.name, sub: "welcome to my mac (it's not a mac)", date: "Today", body: `hey stranger,\n\nyou found my portfolio. it's a mac. every app in the dock actually works and i'm unreasonably proud of that.\n\n- notes: my whole life, in lowercase\n- finder > projects: where i've worked\n- finder > trash: where my bad decisions live\n- music: what's on repeat (hit play)\n- tv: shows i've rewatched way too many times\n- terminal: type help, nerd\n\nif you want to talk growth, gtm or a role, hit compose. it opens your email app with my address in it. i reply. promise.\n\n- ${P.first.toLowerCase()}` },
+    { id: "why", from: P.name, sub: "re: why should we hire you?", date: "Yesterday", body: `short answer: i ship.\n\nmedium answer: 200+ icps at a 15% reply rate, 60+ creators on templates, 800+ students at an event, and a dog-walking business at 15.\n\nlong answer: open notes. it's all there, with jokes.\n\nnext question.\n\n- ${P.first.toLowerCase()}` },
+    { id: "work", from: P.name, sub: "re: are you open to work?", date: "Tuesday", body: `yes. that's the email.\n\nok fine, more: ${P.status}.\n\nreceipts:\n- oneassure: founder-led content on x, templates for 60+ affiliate creators\n- kissa: outbound ai agent, 200+ icps, 15% reply rate\n- ekume: 800+ students, partners like geeksforgeeks and mlh\n- octupie: built x from zero, product reels, reddit\n\nlinkedin, if you need it to look official: ${P.links.linkedin}\n\n- ${P.first.toLowerCase()}` },
   ];
   OS.apps.mail = {
-    title: "Mail", w: 1000, h: 600, about: "say hi to adhiraj",
+    title: "Mail", w: 1000, h: 600, about: "slide into my inbox (professionally)",
     mount(w, arg) {
       w.state = { box: "inbox", id: "hi" };
       w.body.innerHTML = `
@@ -563,12 +580,12 @@ started my first business (grangers) at 15. got 3 offers off a month of cold dms
       $(".m-back", v).onclick = () => w.body.classList.remove("m-detail");
       $(".send", v).onclick = () => {
         const name = $(".fn", v).value.trim(), su = $(".su", v).value.trim() || "hey adhiraj", bd = $(".bd", v).value.trim();
-        if (!bd) { $(".bd", v).focus(); OS.toast("Mail", "write something first :)", "mail"); return; }
+        if (!bd) { $(".bd", v).focus(); OS.toast("Mail", "can't send an empty email. this isn't a situationship", "mail"); return; }
         const body = bd + (name ? `\n\n- ${name}` : "");
         window.location.href = `mailto:${P.email}?subject=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
         const sent = this.sent(); const id = "s" + Date.now();
         sent.unshift({ id, from: name || "you", sub: su, date: "Just now", body }); SAFE.lset("mac-sent", JSON.stringify(sent.slice(0, 20)));
-        OS.toast("Message ready", "finish sending it in your email app", "mail");
+        OS.toast("Message ready", "hit send in your email app. i'll reply, i swear", "mail");
         w.state.box = "sent"; w.state.id = id; this.list(w); this.read(w);
       };
       OS.setHash("mail/compose");
@@ -579,7 +596,7 @@ started my first business (grangers) at 15. got 3 offers off a month of cold dms
      SAFARI
      ===================================================================== */
   OS.apps.safari = {
-    title: "Safari", w: 960, h: 580, about: "adhiraj's corners of the internet",
+    title: "Safari", w: 960, h: 580, about: "my corners of the internet",
     mount(w) {
       w.body.style.flexDirection = "column";
       const favs = [
@@ -600,7 +617,7 @@ started my first business (grangers) at 15. got 3 offers off a month of cold dms
         const url = /^https?:\/\//.test(v) ? v : v.includes(".") && !v.includes(" ") ? "https://" + v : "https://www.google.com/search?q=" + encodeURIComponent(v);
         window.open(url, "_blank", "noopener");
       };
-      $(".rl", w.body).onclick = () => OS.toast("Safari", "reloaded. it was already perfect", "safari");
+      $(".rl", w.body).onclick = () => OS.toast("Safari", "reloaded. it was already perfect, but ok", "safari");
       OS.setHash("safari");
     },
   };
@@ -609,7 +626,7 @@ started my first business (grangers) at 15. got 3 offers off a month of cold dms
      SYSTEM SETTINGS
      ===================================================================== */
   OS.apps.settings = {
-    title: "System Settings", icon: "settings", w: 860, h: 600, about: "tweak the mac. it remembers your choices",
+    title: "System Settings", icon: "settings", w: 860, h: 600, about: "change stuff. it remembers. unlike me",
     mount(w, arg) {
       w.state = { page: arg || "account" };
       const item = (k, label, glyph, color) => `<button class="sb-i set" data-p="${k}"><span class="sq" style="background:${color}">${GLYPH[glyph]}</span><span>${label}</span></button>`;
@@ -651,10 +668,10 @@ started my first business (grangers) at 15. got 3 offers off a month of cold dms
       } else if (p === "wifi") {
         html += `<div class="group"><div class="gr"><span class="sq" style="width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:#0a84ff;color:#fff">${GLYPH.wifi.replace("<svg", '<svg width="18" height="18"')}</span><span class="grow"><b>Wi-Fi</b><small>${S.wifi ? "Connected" : "Off"}</small></span>${sw("wifi", S.wifi)}</div>
           ${S.wifi ? `<div class="gr"><span class="grow"><b>Bengaluru_5G</b><small>Connected · secure</small></span>✓</div>` : ""}</div>
-          ${S.wifi ? `<div class="gh">Other Networks</div><div class="group"><div class="gr"><span class="grow">chai_point_guest</span>🔒</div><div class="gr"><span class="grow">cold_dm_hotspot</span>🔒</div></div>` : ""}`;
+          ${S.wifi ? `<div class="gh">Other Networks</div><div class="group"><div class="gr"><span class="grow">chai_point_guest</span>🔒</div><div class="gr"><span class="grow">cold_dm_hotspot</span>🔒</div><div class="gr"><span class="grow">pretty fly for a wifi</span>🔒</div></div>` : ""}`;
       } else if (p === "bluetooth") {
         html += `<div class="group"><div class="gr"><span class="grow"><b>Bluetooth</b><small>${S.bluetooth ? "Discoverable as “" + esc(P.first) + "'s MacBook”" : "Off"}</small></span>${sw("bluetooth", S.bluetooth)}</div></div>
-          ${S.bluetooth ? `<div class="gh">Nearby Devices</div><div class="group"><div class="gr"><span class="grow" style="color:var(--text-2)">searching…</span></div></div>` : ""}`;
+          ${S.bluetooth ? `<div class="gh">Nearby Devices</div><div class="group"><div class="gr"><span class="grow" style="color:var(--text-2)">searching… (like me, for work-life balance)</span></div></div>` : ""}`;
       } else if (p === "appearance") {
         const mode = (k, l, bg) => `<button class="${S.theme === k ? "on" : ""}" data-theme="${k}"><span class="sw" style="background:${bg}"></span>${l}</button>`;
         html += `<div class="group"><div class="appear">${mode("light", "Light", "linear-gradient(#f5f5f7 0 30%,#fff 30%)")}${mode("dark", "Dark", "linear-gradient(#3a3a3c 0 30%,#1c1c1e 30%)")}${mode("auto", "Auto", "linear-gradient(90deg,#f5f5f7 50%,#1c1c1e 50%)")}</div></div>
@@ -666,14 +683,15 @@ started my first business (grangers) at 15. got 3 offers off a month of cold dms
           <div class="gr"><span class="grow"><b>Size</b></span><input type="range" min="40" max="76" value="${S.dockSize}" data-range="dockSize" style="width:200px"></div>
           <div class="gr"><span class="grow"><b>Magnification</b><small>icons grow when you hover</small></span>${sw("magnify", S.magnify)}</div></div>`;
       } else if (p === "about") {
-        html += `<div class="about-mac"><div class="laptop">${laptopSvg()}</div><h2>${esc(P.first)}'s MacBook</h2><p>Growth & GTM Edition, 2026</p></div>
+        html += `<div class="about-mac"><div class="laptop">${laptopSvg()}</div><h2>${esc(P.first)}'s MacBook</h2><p>Growth & GTM Edition, 2026 (not actually a mac)</p></div>
           <div class="group kv">
             <div class="gr"><b>Name</b><span>${esc(P.name)}</span></div>
-            <div class="gr"><b>Chip</b><span>growth + gtm</span></div>
-            <div class="gr"><b>Memory</b><span>every cold dm reply</span></div>
+            <div class="gr"><b>Chip</b><span>growth + gtm (overclocked)</span></div>
+            <div class="gr"><b>Memory</b><span>remembers every cold dm reply, forgets every password</span></div>
+            <div class="gr"><b>Battery</b><span>runs on deadlines</span></div>
             <div class="gr"><b>Location</b><span>${esc(P.location)}</span></div>
             <div class="gr"><b>Current build</b><span>oneassure · kissa · ekume</span></div>
-            <div class="gr"><b>macOS</b><span>adhiraj os 19 (first release at 15)</span></div>
+            <div class="gr"><b>macOS</b><span>adhiraj os 19 (first release at 15, still in beta)</span></div>
           </div>
           <div style="text-align:center"><button class="btn" data-act="more">More Info…</button></div>`;
       }
