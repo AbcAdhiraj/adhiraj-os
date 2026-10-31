@@ -19,7 +19,7 @@ window.PROFILE = {
   headline: "growth @ oneassure | making videos and fidgeting with agents",
   location: "Bengaluru, India",
   email: "adhirajtiwari01@gmail.com",
-  photo: "me.jpg",
+  photo: "me.jpg?v=2",
   links: {
     linkedin: "https://www.linkedin.com/in/rajishere",
     x: "https://x.com/adhiraj_xyz",
@@ -38,7 +38,7 @@ window.NOTES = [
     body: `
 # about me
 
-![me, acting like this wasn't take 14](me.jpg)
+![me, acting like this wasn't take 14](me.jpg?v=2)
 
 hey, i'm adhiraj. 19. growth at [oneassure](https://www.oneassure.in), building [kissa](#finder/projects/kissa) on the side, running mostly on vibes and deadlines.
 

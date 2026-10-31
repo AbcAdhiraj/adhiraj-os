@@ -527,6 +527,6 @@ img.app-icon { display: block; width: 100%; height: 100%; object-fit: contain; u
 
 /* photo in notes */
 .note-doc figure.note-photo { margin: 4px 0 20px; }
-.note-doc figure.note-photo img { display: block; width: 100%; max-width: 260px; aspect-ratio: 4/5; object-fit: cover; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.18); transform: rotate(-1.5deg); }
+.note-doc figure.note-photo img { display: block; width: 100%; max-width: 280px; aspect-ratio: 1; object-fit: cover; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.18); transform: rotate(-1.5deg); }
 .note-doc figure.note-photo figcaption { font-size: 12.5px; color: var(--text-2); margin-top: 10px; font-style: italic; }
 .ql .ql-hd .badge svg { width: 30px; height: 36px; }
