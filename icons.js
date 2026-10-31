@@ -1,4 +1,4 @@
-/* Hand-drawn SVG app icons (no Apple assets used) */
+/* App icons: real macOS PNGs (icon-*.png) for apps, SVG for folders/docs */
 (function () {
   const sq = (id, inner, defs = "") =>
     `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs>${defs}<clipPath id="c-${id}"><rect x="4" y="4" width="92" height="92" rx="22"/></clipPath></defs><g clip-path="url(#c-${id})">${inner}</g><rect x="4.5" y="4.5" width="91" height="91" rx="21.5" fill="none" stroke="rgba(0,0,0,.12)"/></svg>`;
@@ -75,6 +75,11 @@
 
     apple: `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M16.4 12.6c0-2.4 2-3.5 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.1-1.2 2.9-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.4-1-2.4-4zM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.6-2.8 1.4-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.5 2.8-1.3z"/></svg>`,
   };
+
+  /* real macOS app icons (PNG) replace the drawn ones */
+  ["finder", "notes", "music", "tv", "safari", "mail", "terminal", "settings", "trash"].forEach((n) => {
+    window.ICONS[n] = `<img class="app-icon" src="icon-${n}.png" alt="" draggable="false">`;
+  });
 
   /* small UI glyphs */
   const g = (d, extra = "") => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${extra}>${d}</svg>`;
