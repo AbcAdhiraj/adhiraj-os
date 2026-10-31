@@ -1,6 +1,6 @@
 # adhiraj-os
 
-my portfolio is a mac. live at **https://abcadhiraj.github.io/adhiraj-os/**
+my portfolio is a mac. live at **https://adhi.lol**
 
 inspired by [dhrvie.lol](https://dhrvie.lol).
 
